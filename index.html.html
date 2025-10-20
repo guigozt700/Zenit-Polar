@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zenit-Polar ML Cyber</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0"></script>
+<style>
+body {
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  padding: 20px;
+  background: radial-gradient(circle at top, #0c0c0c, #1a1a1a);
+  color: #a0f0d0;
+  overflow-x: hidden;
+}
+
+h1 {
+  text-align: center;
+  color: #a0f0d0;
+  text-shadow: 0 0 6px #a0f0d0, 0 0 12px rgba(160,240,208,0.5);
+  margin-bottom: 20px;
+}
+
+.box {
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid #3aa69b;
+  padding: 25px;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 30px auto;
+  box-shadow: 0 0 15px rgba(58,166,155,0.4);
+  animation: fadeIn 1s ease-in;
+}
+
+textarea, input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #3aa69b;
+  background: #0f0f0f;
+  color: #a0f0d0;
+  font-family: monospace;
+  font-size: 16px;
+  transition: 0.3s;
+}
+textarea:focus, input:focus {
+  border-color: #5fd8c5;
+  box-shadow: 0 0 10px rgba(95,216,197,0.4);
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  font-family: monospace;
+  font-weight: bold;
+  border-radius: 6px;
+  border: 1px solid #3aa69b;
+  background: #121212;
+  color: #a0f0d0;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover {
+  background: #1a1a1a;
+  box-shadow: 0 0 12px rgba(58,166,155,0.6);
+}
+
+#output {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #3aa69b;
+  border-radius: 6px;
+  background: #0f0f0f;
+  font-family: monospace;
+  font-size: 18px;
+  min-height: 40px;
+  transition: 0.3s;
+  box-shadow: 0 0 6px rgba(58,166,155,0.4);
+}
+
+#status {
+  font-size: 14px;
+  color: #a0f0d0;
+  margin-top: 10px;
+}
+
+/* Efeitos de entrada e pulsação leve */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h1>🔐 Zenit-Polar ML Cyber</h1>
+  <p>O modelo aprende automaticamente a substituir letras da cifra Zenit-Polar com Machine Learning.</p>
+
+  <button id="trainBtn">Treinar Modelo</button>
+  <p id="status">Status: aguardando treino...</p>
+
+  <textarea id="inputText" rows="3" placeholder="Digite sua mensagem..."></textarea>
+  <button id="predictBtn" disabled>Criptografar com o modelo</button>
+
+  <p>Saída (criptografada):</p>
+  <div id="output">—</div>
+</div>
+
+<script>
+// Zenit-Polar mapping
+const map = { Z:'P', E:'O', N:'L', I:'A', T:'R', P:'Z', O:'E', L:'N', A:'I', R:'T' };
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+// Dataset
+const pairs = alphabet.map(letter => ({ x: letter, y: map[letter] || letter }));
+
+// One-hot
+const letterToIndex = {}, indexToLetter = {};
+alphabet.forEach((l,i)=>{ letterToIndex[l]=i; indexToLetter[i]=l; });
+function toOneHot(index){ const arr=Array(alphabet.length).fill(0); arr[index]=1; return arr; }
+const xs = tf.tensor2d(pairs.map(p=>toOneHot(letterToIndex[p.x])));
+const ys = tf.tensor2d(pairs.map(p=>toOneHot(letterToIndex[p.y])));
+
+// Modelo
+const model = tf.sequential();
+model.add(tf.layers.dense({ units: 64, inputShape:[26], activation:'relu' }));
+model.add(tf.layers.dense({ units:26, activation:'softmax' }));
+model.compile({ optimizer:'adam', loss:'categoricalCrossentropy', metrics:['accuracy'] });
+
+// Treino
+async function trainModel(){
+  document.getElementById("status").innerText="Treinando modelo...";
+  await model.fit(xs, ys, {
+    epochs:200,
+    callbacks:{
+      onEpochEnd:(epoch, logs)=>{
+        document.getElementById("status").innerText=
+          `Época ${epoch+1}/200 — perda:${logs.loss.toFixed(5)} — acurácia:${(logs.acc*100).toFixed(2)}%`;
+      },
+      onTrainEnd:()=>{
+        document.getElementById("status").innerText="✅ Treino concluído!";
+        document.getElementById("predictBtn").disabled=false;
+      }
+    }
+  });
+}
+
+// Previsão
+async function predictText(){
+  const text=document.getElementById("inputText").value.toUpperCase();
+  let result='';
+  for(let ch of text){
+    if(!/[A-Z]/.test(ch)){ result+=ch; continue; }
+    const input=tf.tensor2d([toOneHot(letterToIndex[ch])]);
+    const output=model.predict(input);
+    const data=await output.data();
+    const predictedIndex=data.indexOf(Math.max(...data));
+    result+=indexToLetter[predictedIndex];
+  }
+  document.getElementById("output").innerText=result;
+}
+
+document.getElementById("trainBtn").addEventListener("click",trainModel);
+document.getElementById("predictBtn").addEventListener("click",predictText);
+</script>
+
+</body>
+</html>

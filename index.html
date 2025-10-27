@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zenit-Polar ML Cyber</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0"></script>
+<link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<div class="box">
+  <h1>🔐 Zenit-Polar ML Cyber</h1>
+  <p>O modelo aprende automaticamente a substituir letras da cifra Zenit-Polar com Machine Learning.</p>
+
+  <button id="trainBtn">Treinar Modelo</button>
+  <p id="status">Status: aguardando treino...</p>
+
+  <textarea id="inputText" rows="3" placeholder="Digite sua mensagem que deseja criptografar..."></textarea>
+  <button id="predictBtn" disabled>Criptografar com o modelo</button>
+
+  <p>Saída (criptografada):</p>
+  <div id="output">—</div>
+</div>
+
+<script src="/criptografia.js"></script>
+
+</body>
+</html>
